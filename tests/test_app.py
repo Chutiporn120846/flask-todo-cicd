@@ -1,11 +1,29 @@
 import pytest
 from unittest.mock import patch
 from sqlalchemy.exc import SQLAlchemyError
+from app import create_app
 from app.models import db, Todo
 
 
 # ------------------------
-# Test App Factory
+# Fixtures
+# ------------------------
+@pytest.fixture
+def app():
+    """สร้างแอป Flask สำหรับทดสอบ"""
+    app = create_app('testing')
+    yield app
+
+
+@pytest.fixture
+def client(app):
+    """สร้าง client สำหรับทดสอบ Flask"""
+    with app.test_client() as client:
+        yield client
+
+
+# ------------------------
+# Test App Factory & Error Handler
 # ------------------------
 class TestAppFactory:
     """Test application factory and configuration"""
@@ -46,6 +64,13 @@ class TestAppFactory:
             assert 'Internal server error' in response.get_json()['error']
 
         app.config['TESTING'] = True
+
+
+# ------------------------
+# Test Health Endpoint
+# ------------------------
+class TestHealthEndpoint:
+    """Test /api/health"""
 
     def test_health_endpoint_success(self, client):
         """Test health check returns 200 when database is healthy"""
@@ -156,3 +181,34 @@ class TestIntegration:
         # Verify deleted
         verify = client.get(f'/api/todos/{todo_id}')
         assert verify.status_code == 404
+
+# ------------------------
+# เพิ่มเติมเพื่อครอบคลุม edge case
+# ------------------------
+def test_get_todo_not_found(client):
+    """เรียกดู todo ที่ไม่มีในระบบ"""
+    response = client.get("/api/todos/99999")
+    assert response.status_code == 404
+    data = response.get_json()
+    assert data["success"] is False
+    assert "error" in data
+
+
+def test_update_todo_invalid_field(client):
+    """อัปเดต todo ด้วยข้อมูลไม่ถูกต้อง"""
+    # สร้าง todo ก่อน
+    res = client.post("/api/todos", json={"title": "Invalid update"})
+    todo_id = res.get_json()["data"]["id"]
+
+    # ส่งข้อมูลที่ไม่ควรจะผ่าน
+    response = client.put(f"/api/todos/{todo_id}", json={"completed": "not_bool"})
+    assert response.status_code in (400, 422)
+    assert "error" in response.get_json()
+
+
+def test_delete_todo_not_exist(client):
+    """ลบ todo ที่ไม่มีอยู่"""
+    response = client.delete("/api/todos/99999")
+    assert response.status_code == 404
+    data = response.get_json()
+    assert "error" in data
