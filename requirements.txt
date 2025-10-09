@@ -1,0 +1,1 @@
+pytest-mock==3.12.0              # ← เพิ่ม: บรรทัดนี้ สำหรับ mocking  database errors
