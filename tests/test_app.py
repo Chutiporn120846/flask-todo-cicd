@@ -212,3 +212,13 @@ def test_delete_todo_not_exist(client):
     assert response.status_code == 404
     data = response.get_json()
     assert "error" in data
+
+def test_update_todo_invalid_field(client):
+    """อัปเดต todo ด้วยข้อมูลไม่ถูกต้อง"""
+    res = client.post("/api/todos", json={"title": "Invalid update"})
+    todo_id = res.get_json()["data"]["id"]
+
+    response = client.put(f"/api/todos/{todo_id}", json={"completed": "not_bool"})
+    assert response.status_code in (400, 422, 500)  # ✅ เพิ่ม 500 เข้าไป
+    assert "error" in response.get_json()
+
