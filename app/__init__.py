@@ -4,8 +4,6 @@ from app.models import db
 from app.routes import api
 from app.config import config
 
-
-
 def create_app(config_name=None):
     """Application factory pattern"""
     if config_name is None:
