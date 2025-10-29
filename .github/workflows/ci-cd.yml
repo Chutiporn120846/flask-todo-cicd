@@ -142,7 +142,7 @@ jobs:
           exit 1
 
   # ---------------------------
-  # 🚆 Job 4: Deploy to Railway
+  # 🚆 Job 4: Deploy to Railway (Fixed)
   # ---------------------------
   deploy-railway:
     name: Deploy to Railway
@@ -157,15 +157,15 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: 🚀 Deploy using Railway Token
+      - name: 🚀 Deploy using Railway Token (non-interactive)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          echo "✅ เริ่ม deploy ด้วย Railway CLI (token via stdin)"
-          echo "$RAILWAY_TOKEN" | railway login --browserless
-          railway link --project $RAILWAY_PROJECT_ID
-          railway up --detach
+          echo "✅ เริ่ม deploy ด้วย Railway CLI (non-interactive mode)"
+          railway whoami || echo "ใช้ token จาก env โดยตรง"
+          railway link --project $RAILWAY_PROJECT_ID --yes
+          railway up --detach --service flask-todo-cicd --yes
 
       - name: Wait for deployment
         run: sleep 60
