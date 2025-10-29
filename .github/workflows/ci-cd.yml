@@ -12,7 +12,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Job 1: Run Tests
+  # ---------------------------
+  # 🧪 Job 1: Run Tests
+  # ---------------------------
   test:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -66,7 +68,9 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  # Job 2: Build Docker Image
+  # ---------------------------
+  # 🐳 Job 2: Build Docker Image
+  # ---------------------------
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -111,7 +115,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Job 3: Deploy to Render
+  # ---------------------------
+  # ☁️ Job 3: Deploy to Render
+  # ---------------------------
   deploy-render:
     name: Deploy to Render
     runs-on: ubuntu-latest
@@ -121,6 +127,7 @@ jobs:
     steps:
       - name: Trigger Render Deployment
         run: |
+          echo "🚀 Triggering Render Deploy..."
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
       
       - name: Wait for deployment
@@ -139,7 +146,9 @@ jobs:
           echo "❌ Render deployment health check failed"
           exit 1
 
-  # ✅ Job 4: Deploy to Railway (อัปเดตใช้ railway auth login)
+  # ---------------------------
+  # 🚆 Job 4: Deploy to Railway
+  # ---------------------------
   deploy-railway:
     name: Deploy to Railway
     runs-on: ubuntu-latest
@@ -153,18 +162,20 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       
-      - name: Login, Link & Deploy to Railway
+      - name: Link & Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          # ✅ login ด้วย token แบบใหม่
-          railway auth login --token $RAILWAY_TOKEN
+          echo "✅ เริ่ม deploy ด้วย Railway token ผ่าน environment variable"
           
-          # ✅ link project
+          # ✅ ตั้งค่า token ให้ CLI ใช้งานอัตโนมัติ
+          export RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }}
+          
+          # ✅ ลิงก์ไปยัง project ใน Railway
           railway link --project=$RAILWAY_PROJECT_ID
           
-          # ✅ deploy (แก้ชื่อ service ให้ตรงกับใน Railway)
+          # ✅ Deploy (⚠️ เปลี่ยนชื่อ service ให้ตรงกับของคุณใน Railway)
           railway up --detach --service flask-todo-cicd
       
       - name: Wait for deployment
