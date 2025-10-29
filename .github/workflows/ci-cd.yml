@@ -139,7 +139,7 @@ jobs:
           echo "❌ Render deployment health check failed"
           exit 1
 
-  # ✅ Job 4: Deploy to Railway (แก้ไขแล้วให้ login สำเร็จแน่นอน)
+  # ✅ Job 4: Deploy to Railway (อัปเดตใช้ railway auth login)
   deploy-railway:
     name: Deploy to Railway
     runs-on: ubuntu-latest
@@ -158,13 +158,13 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          # ✅ เข้าสู่ระบบด้วย Token
-          railway login --token $RAILWAY_TOKEN
+          # ✅ login ด้วย token แบบใหม่
+          railway auth login --token $RAILWAY_TOKEN
           
-          # ✅ ลิงก์ไปยังโปรเจกต์ใน Railway
+          # ✅ link project
           railway link --project=$RAILWAY_PROJECT_ID
           
-          # ✅ Deploy service (แก้ชื่อ service ให้ตรงกับใน Railway)
+          # ✅ deploy (แก้ชื่อ service ให้ตรงกับใน Railway)
           railway up --detach --service flask-todo-cicd
       
       - name: Wait for deployment
