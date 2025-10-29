@@ -130,16 +130,16 @@ jobs:
         run: |
           for i in {1..5}; do
             if curl -f ${{ secrets.RENDER_APP_URL }}/api/health; then
-              echo "Deployment successful!"
+              echo "✅ Render deployment successful!"
               exit 0
             fi
             echo "Attempt $i failed, retrying..."
             sleep 10
           done
-          echo "Deployment health check failed"
+          echo "❌ Render deployment health check failed"
           exit 1
 
-  # Job 4: Deploy to Railway
+  # ✅ Job 4: Deploy to Railway (แก้ไขแล้ว)
   deploy-railway:
     name: Deploy to Railway
     runs-on: ubuntu-latest
@@ -153,12 +153,13 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
       
-      - name: Deploy to Railway
+      - name: Link & Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
-          railway up --detach
+          railway link --project=$RAILWAY_PROJECT_ID
+          railway up --detach --service flask-todo-cicd
       
       - name: Wait for deployment
         run: sleep 60
@@ -167,11 +168,11 @@ jobs:
         run: |
           for i in {1..5}; do
             if curl -f ${{ secrets.RAILWAY_APP_URL }}/api/health; then
-              echo "Railway deployment successful!"
+              echo "✅ Railway deployment successful!"
               exit 0
             fi
             echo "Attempt $i failed, retrying..."
             sleep 10
           done
-          echo "Railway deployment health check failed"
+          echo "❌ Railway deployment health check failed"
           exit 1
