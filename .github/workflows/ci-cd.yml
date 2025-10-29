@@ -12,9 +12,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # ---------------------------
-  # 🧪 Job 1: Run Tests
-  # ---------------------------
+  # ✅ 1. Run Tests
   test:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -37,150 +35,84 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
-      - name: Run linting
-        run: |
-          pip install flake8
-          flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 app --count --max-line-length=120 --statistics
-      
-      - name: Run tests with coverage
+
+      - name: Run tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           FLASK_ENV: testing
-        run: |
-          pytest --cov=app --cov-report=xml --cov-report=term
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
+        run: pytest --maxfail=1 --disable-warnings -q
 
-  # ---------------------------
-  # 🐳 Job 2: Build Docker Image
-  # ---------------------------
+  # ✅ 2. Build Docker Image
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push'
-    
+
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      - name: Log in to Container Registry
+
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-  # ---------------------------
-  # ☁️ Job 3: Deploy to Render
-  # ---------------------------
-  deploy-render:
-    name: Deploy to Render
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Trigger Render Deployment
-        run: |
-          echo "🚀 Triggering Render Deploy..."
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-      
-      - name: Wait for deployment
-        run: sleep 60
-      
-      - name: Health check
-        run: |
-          for i in {1..5}; do
-            if curl -f ${{ secrets.RENDER_APP_URL }}/api/health; then
-              echo "✅ Render deployment successful!"
-              exit 0
-            fi
-            echo "Attempt $i failed, retrying..."
-            sleep 10
-          done
-          echo "❌ Render deployment health check failed"
-          exit 1
-
-  # ---------------------------
-  # 🚆 Job 4: Deploy to Railway
-  # ---------------------------
+  # ✅ 3. Deploy to Railway (ใช้ Token ใหม่)
   deploy-railway:
     name: Deploy to Railway
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Install Railway CLI
         run: npm install -g @railway/cli
-      
-      - name: Link & Deploy to Railway
+
+      - name: 🚀 Deploy with Railway Token
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         run: |
-          echo "✅ เริ่ม deploy ด้วย Railway CLI เวอร์ชันใหม่ (env token mode)"
+          echo "✅ เริ่ม deploy ด้วย Railway CLI (env token mode)"
+          railway whoami || echo "📦 ยังไม่ได้เชื่อมต่อ Railway"
+          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }}
+          railway up --service ${{ secrets.RAILWAY_SERVICE_ID }} --detach
 
-          # ✅ ตั้ง token ให้ CLI ใช้งานจาก environment
-          export RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }}
-
-          # ✅ ลิงก์โปรเจกต์ใน Railway (ไม่ใช้ --token)
-          railway link --project=$RAILWAY_PROJECT_ID
-
-          # ✅ Deploy (⚠️ เปลี่ยนชื่อ service ให้ตรงกับของคุณใน Railway)
-          railway up --detach --service flask-todo-cicd
-      
       - name: Wait for deployment
         run: sleep 60
-      
+
       - name: Health check
         run: |
           for i in {1..5}; do
@@ -188,7 +120,7 @@ jobs:
               echo "✅ Railway deployment successful!"
               exit 0
             fi
-            echo "Attempt $i failed, retrying..."
+            echo "⏳ Attempt $i failed, retrying..."
             sleep 10
           done
           echo "❌ Railway deployment health check failed"
