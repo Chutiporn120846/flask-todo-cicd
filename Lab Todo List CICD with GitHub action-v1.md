@@ -2143,18 +2143,18 @@ docker-compose up -d
 
 ตรวจสอบว่าทำสำเร็จทุกข้อ:
 
-- [ ] สร้าง GitHub repository และ clone ลงเครื่อง
-- [ ] สร้าง Flask application ที่มี CRUD operations ครบถ้วน
-- [ ] เขียน tests ที่ครอบคลุม code coverage > 80%
-- [ ] สร้าง Dockerfile ที่ optimize แล้ว
-- [ ] สร้าง docker-compose.yml ที่แยก services
-- [ ] รัน application ด้วย Docker และทดสอบใน local สำเร็จ
-- [ ] สร้าง GitHub Actions workflow ที่มีทั้ง CI และ CD
-- [ ] Deploy ไปยัง Render สำเร็จ
-- [ ] Deploy ไปยัง Railway สำเร็จ
-- [ ] ทดสอบ API endpoints บน production
-- [ ] Health checks ทำงานถูกต้อง
-- [ ] Auto-deployment ทำงานเมื่อ push code ใหม่
+- [✅] สร้าง GitHub repository และ clone ลงเครื่อง
+- [✅] สร้าง Flask application ที่มี CRUD operations ครบถ้วน
+- [✅] เขียน tests ที่ครอบคลุม code coverage > 80%
+- [✅] สร้าง Dockerfile ที่ optimize แล้ว
+- [✅] สร้าง docker-compose.yml ที่แยก services
+- [✅] รัน application ด้วย Docker และทดสอบใน local สำเร็จ
+- [✅] สร้าง GitHub Actions workflow ที่มีทั้ง CI และ CD
+- [✅] Deploy ไปยัง Render สำเร็จ
+- [✅] Deploy ไปยัง Railway สำเร็จ
+- [✅] ทดสอบ API endpoints บน production
+- [✅] Health checks ทำงานถูกต้อง
+- [✅] Auto-deployment ทำงานเมื่อ push code ใหม่
 
 ### 10.2 คำถามทบทวน
 
@@ -2162,14 +2162,27 @@ docker-compose up -d
 1. **Docker Architecture**:
    - เหตุใดจึงต้องแยก database และ application เป็นคนละ containers ?
    - Multi-stage build มีประโยชน์อย่างไร?
-
+    เพราะความยืดหยุ่นในการปรับขนาด (Scalability):สามารถ scale application หลาย instances ได้โดยไม่ต้องมีฐานข้อมูลซ้ำ
+    DB อาจรันบน host เครื่องเดียว ส่วน app กระจายได้หลายเครื่อง 
+    Multi-stage Build มีประโยชน์อย่างไร  
+    ลดขนาด Image:
+    ตัดไฟล์ที่ใช้เฉพาะตอน build ออก เช่น compiler, dependency devทำให้ image สำหรับ production เล็กและโหลดเร็ว
+    เพิ่มความปลอดภัย:
+    ไม่มีเครื่องมือ build เช่น gcc หรือ git ใน production stageลดพื้นผิวการโจมตีของ container
+    เพิ่มความเร็วในการ deploy:
+    image เล็กลง → push/pull เร็วขึ้น → deploy เร็วขึ้นแยกความรับผิดชอบชัดเจน:นักพัฒนาโฟกัสที่ build codeDevOps โฟกัสที่ run environment
 2. **Testing Strategy**:
    - การวัด code coverage มีความสำคัญอย่างไร?
-
+    บ่งชี้คุณภาพของ Test
+    ถ้ามี coverage สูง แสดงว่า test ได้ตรวจสอบหลายส่วนของโปรแกรมแต่ถ้าต่ำ แปลว่าอาจมีโค้ดจำนวนมากที่ไม่เคยถูกทดสอบเลย
+    ผลดี:
+    มั่นใจได้ว่าฟังก์ชันหลักทำงานถูกต้องลดความเสี่ยงที่ bug จะหลุดไป production
 3. **Deployment**:
    - Health check endpoint มีความสำคัญอย่างไร?
+    Health Check Endpoint คือ จุดตรวจสอบสุขภาพของระบบ (เช่น /health หรือ /api/health)
+    ใช้เพื่อให้ระบบอื่นหรือผู้ดูแลรู้ว่า แอปยังทำงานปกติหรือไม่
    - Render และ Railway มีความแตกต่างกันอย่่างไร?
-
+    Render เหมาะกับการ deploy ระบบจริง (production) เพราะเสถียรและตั้งค่าได้ละเอียด ส่วน Railway เหมาะกับ โปรเจกต์ทดลองหรือการเรียนรู้ เพราะใช้งานง่าย ตั้งค่าอัตโนมัติ และ deploy ได้เร็ว
 
 ---
 
